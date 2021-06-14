@@ -1,43 +1,70 @@
+#Import Modules
 import pygame
 from paddlesClass import Paddle
 from ball import Ball
+
+
+#Initialize pygame instance
 pygame.init()
 
+#Create colors
 Black = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+#Create display window
 size = (700, 500)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Pong")
 
-paddleA = Paddle(WHITE, 10, 100)
-paddleA.rect.x = 20
-paddleA.rect.y = 200
+#Create PaddleA and PaddleB objects
+LeftPaddle = Paddle(WHITE, 10, 100)
+LeftPaddle.rect.x = 20
+LeftPaddle.rect.y = 200
 
-paddleB = Paddle(WHITE, 10, 100)
-paddleB.rect.x = 670
-paddleB.rect.y = 200
+RightPaddle = Paddle(WHITE, 10, 100)
+RightPaddle.rect.x = 670
+RightPaddle.rect.y = 200
 
+#Create Ball object
 ball = Ball(WHITE, 10, 10)
 ball.rect.x = 345
 ball.rect.y = 195
 
-#list that contains all the sprites we will use in our game
+#List that contains all the sprites we will use in our game
 all_sprites_list = pygame.sprite.Group()
 
-#adds paddles to list
-all_sprites_list.add(paddleA)
-all_sprites_list.add(paddleB)
+#Adds sprites (objects) to list
+all_sprites_list.add(LeftPaddle)
+all_sprites_list.add(RightPaddle)
 all_sprites_list.add(ball)
 
-carryOn = True
-
+#Create clock
 clock = pygame.time.Clock()
 
 #Initialise player scores
 scoreA = 0
 scoreB = 0
 
+#Initialize ball direction variables
+ballDirection = 0
+
+#Initialize Paddle Movement Speed
+PaddleSpeed = 15
+
+# Count Down event for timer
+PlayerScored = pygame.USEREVENT+1
+my_event = pygame.event.Event(PlayerScored)
+count = 4
+current_time = 0
+player_scored_time = 0
+
+#Initialize game font
+font = pygame.font.Font(None, 74)
+
+#Set game loop condition
+carryOn = True
+
+#Begin game loop
 while carryOn:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -46,35 +73,45 @@ while carryOn:
             if event.key == pygame.K_x:
                 carryOn = False
 
+    #Player controls
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
-        paddleA.moveUp(5)
+        LeftPaddle.moveUp(PaddleSpeed)
     if keys[pygame.K_s]:
-        paddleA.moveDown(5)
+        LeftPaddle.moveDown(PaddleSpeed)
     if keys[pygame.K_UP]:
-        paddleB.moveUp(5)
+        RightPaddle.moveUp(PaddleSpeed)
     if keys[pygame.K_DOWN]:
-        paddleB.moveDown(5)
+        RightPaddle.moveDown(PaddleSpeed)
 
 
     # --- game logic goes here
     all_sprites_list.update()
 
+
     #Check if the ball is bouncing against any of the 4 walls:
-    if ball.rect.x>=690:
-        scoreA +=1
-        ball.velocity[0] = -ball.velocity[0]
-    if ball.rect.x<=0:
-        scoreB +=1
-        ball.velocity[0] = -ball.velocity[0]
-    if ball.rect.y>490:
+    if ball.rect.x >= 690:
+        scoreA += 1
+        ballDirection = 1
+        ball.reset()
+        ball.launchBall(ballDirection)
+    if ball.rect.x <= 0:
+        scoreB += 1
+        ballDirection = -1
+        ball.reset()
+        ball.launchBall(ballDirection)
+    if ball.rect.y > 490:
         ball.velocity[1] = -ball.velocity[1]
-    if ball.rect.y<0:
+    if ball.rect.y < 0:
         ball.velocity[1] = -ball.velocity[1]
 
     #Detect collisions between the ball and the paddles
-    if pygame.sprite.collide_mask(ball, paddleA) or pygame.sprite.collide_mask(ball, paddleB):
-        ball.bounce()
+    if pygame.sprite.collide_mask(ball, LeftPaddle):
+        ballDirection = -1
+        ball.bounce(ballDirection)
+    if pygame.sprite.collide_mask(ball, RightPaddle):
+        ballDirection = 1
+        ball.bounce(ballDirection)
 
     # --- Drawing code goes here
     # #fills screen to black
@@ -87,11 +124,10 @@ while carryOn:
     all_sprites_list.draw(screen)
 
     #Display scores:
-    font = pygame.font.Font(None, 74)
-    text = font.render(str(scoreA), 1, WHITE)
-    screen.blit(text, (250,10))
-    text = font.render(str(scoreB), 1, WHITE)
-    screen.blit(text, (420,10))
+    text = font.render(str(scoreA), True, WHITE)
+    screen.blit(text, (250, 10))
+    text = font.render(str(scoreB), True, WHITE)
+    screen.blit(text, (420, 10))
 
     #update screen
     pygame.display.flip()
@@ -101,5 +137,7 @@ while carryOn:
 
 
 pygame.quit()
+
+
 
 
